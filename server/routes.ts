@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertFavoriteSchema } from "@shared/schema";
+import { insertUserSchema, insertFavoriteSchema, insertReviewSchema } from "@shared/schema";
 
 export function registerRoutes(app: Express): Server {
   // User routes
@@ -82,6 +82,61 @@ export function registerRoutes(app: Express): Server {
     const placeId = req.params.placeId;
     await storage.removeFavorite(userId, placeId);
     res.status(204).send();
+  });
+
+  // Reviews routes
+  app.get("/api/restaurants/:placeId/reviews", async (req, res) => {
+    try {
+      const reviews = await storage.getReviews(req.params.placeId);
+      res.json(reviews);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch reviews" });
+    }
+  });
+
+  app.get("/api/users/:userId/reviews/:placeId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const review = await storage.getUserReview(userId, req.params.placeId);
+      if (review) {
+        res.json(review);
+      } else {
+        res.status(404).json({ error: "Review not found" });
+      }
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch review" });
+    }
+  });
+
+  app.post("/api/reviews", async (req, res) => {
+    try {
+      const reviewData = insertReviewSchema.parse(req.body);
+      const review = await storage.addReview(reviewData);
+      res.json(review);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid review data" });
+    }
+  });
+
+  app.patch("/api/reviews/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const reviewData = insertReviewSchema.partial().parse(req.body);
+      const review = await storage.updateReview(id, reviewData);
+      res.json(review);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid review data" });
+    }
+  });
+
+  app.delete("/api/reviews/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteReview(id);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete review" });
+    }
   });
 
   const httpServer = createServer(app);

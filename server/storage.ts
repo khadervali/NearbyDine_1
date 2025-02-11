@@ -1,6 +1,6 @@
-import { users, favorites, type User, type InsertUser, type Favorite, type InsertFavorite } from "@shared/schema";
+import { users, favorites, reviews, type User, type InsertUser, type Favorite, type InsertFavorite, type Review, type InsertReview } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -9,6 +9,11 @@ export interface IStorage {
   getFavorites(userId: number): Promise<Favorite[]>;
   addFavorite(favorite: InsertFavorite): Promise<Favorite>;
   removeFavorite(userId: number, placeId: string): Promise<void>;
+  getReviews(placeId: string): Promise<Review[]>;
+  getUserReview(userId: number, placeId: string): Promise<Review | undefined>;
+  addReview(review: InsertReview): Promise<Review>;
+  updateReview(id: number, review: Partial<InsertReview>): Promise<Review>;
+  deleteReview(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -43,6 +48,41 @@ export class DatabaseStorage implements IStorage {
         eq(favorites.userId, userId) && 
         eq(favorites.placeId, placeId)
       );
+  }
+
+  async getReviews(placeId: string): Promise<Review[]> {
+    return db.select().from(reviews).where(eq(reviews.placeId, placeId));
+  }
+
+  async getUserReview(userId: number, placeId: string): Promise<Review | undefined> {
+    const [review] = await db
+      .select()
+      .from(reviews)
+      .where(
+        and(
+          eq(reviews.userId, userId),
+          eq(reviews.placeId, placeId)
+        )
+      );
+    return review;
+  }
+
+  async addReview(insertReview: InsertReview): Promise<Review> {
+    const [review] = await db.insert(reviews).values(insertReview).returning();
+    return review;
+  }
+
+  async updateReview(id: number, reviewUpdate: Partial<InsertReview>): Promise<Review> {
+    const [review] = await db
+      .update(reviews)
+      .set(reviewUpdate)
+      .where(eq(reviews.id, id))
+      .returning();
+    return review;
+  }
+
+  async deleteReview(id: number): Promise<void> {
+    await db.delete(reviews).where(eq(reviews.id, id));
   }
 }
 

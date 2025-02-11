@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+import { ReviewsSection } from "./reviews-section";
 
 interface RestaurantCardProps {
   placeId: string;
@@ -87,7 +88,8 @@ export function RestaurantCard({
           <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
           <span>{rating}</span>
         </div>
-        <p className="text-sm text-gray-600">{address}</p>
+        <p className="text-sm text-gray-600 mb-4">{address}</p>
+        <ReviewsSection placeId={placeId} userId={userId} />
       </CardContent>
     </Card>
   );
