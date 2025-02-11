@@ -1,4 +1,6 @@
-import { InsertUser, User, InsertFavorite, Favorite } from "@shared/schema";
+import { users, favorites, type User, type InsertUser, type Favorite, type InsertFavorite } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -9,57 +11,39 @@ export interface IStorage {
   removeFavorite(userId: number, placeId: string): Promise<void>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private favorites: Map<number, Favorite>;
-  private currentUserId: number;
-  private currentFavoriteId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.favorites = new Map();
-    this.currentUserId = 1;
-    this.currentFavoriteId = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByGoogleId(googleId: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.googleId === googleId
-    );
+    const [user] = await db.select().from(users).where(eq(users.googleId, googleId));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
   async getFavorites(userId: number): Promise<Favorite[]> {
-    return Array.from(this.favorites.values()).filter(
-      (favorite) => favorite.userId === userId
-    );
+    return db.select().from(favorites).where(eq(favorites.userId, userId));
   }
 
   async addFavorite(insertFavorite: InsertFavorite): Promise<Favorite> {
-    const id = this.currentFavoriteId++;
-    const favorite: Favorite = { ...insertFavorite, id };
-    this.favorites.set(id, favorite);
+    const [favorite] = await db.insert(favorites).values(insertFavorite).returning();
     return favorite;
   }
 
   async removeFavorite(userId: number, placeId: string): Promise<void> {
-    const favorite = Array.from(this.favorites.values()).find(
-      (f) => f.userId === userId && f.placeId === placeId
-    );
-    if (favorite) {
-      this.favorites.delete(favorite.id);
-    }
+    await db
+      .delete(favorites)
+      .where(
+        eq(favorites.userId, userId) && 
+        eq(favorites.placeId, placeId)
+      );
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
