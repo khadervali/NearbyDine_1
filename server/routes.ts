@@ -9,7 +9,7 @@ export function registerRoutes(app: Express): Server {
     try {
       const userData = insertUserSchema.parse(req.body);
       const existingUser = await storage.getUserByGoogleId(userData.googleId);
-      
+
       if (existingUser) {
         res.json(existingUser);
       } else {
@@ -18,6 +18,32 @@ export function registerRoutes(app: Express): Server {
       }
     } catch (error) {
       res.status(400).json({ error: "Invalid user data" });
+    }
+  });
+
+  // Restaurants route
+  app.get("/api/restaurants", async (req, res) => {
+    try {
+      const { latitude, longitude, radius = 5000 } = req.query;
+
+      if (!latitude || !longitude) {
+        return res.status(400).json({ error: "Latitude and longitude are required" });
+      }
+
+      const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=restaurant&key=${apiKey}`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch from Google Places API');
+      }
+
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error('Error fetching restaurants:', error);
+      res.status(500).json({ error: "Failed to fetch restaurants" });
     }
   });
 
