@@ -24,16 +24,20 @@ export function registerRoutes(app: Express): Server {
   // Restaurants route
   app.get("/api/restaurants", async (req, res) => {
     try {
-      const { latitude, longitude, radius = 5000 } = req.query;
+      const { latitude, longitude, pageToken } = req.query;
 
       if (!latitude || !longitude) {
         return res.status(400).json({ error: "Latitude and longitude are required" });
       }
 
       const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=restaurant&key=${apiKey}`
-      );
+      let url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&type=restaurant&rankby=distance&key=${apiKey}`;
+
+      if (pageToken) {
+        url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?pagetoken=${pageToken}&key=${apiKey}`;
+      }
+
+      const response = await fetch(url);
 
       if (!response.ok) {
         throw new Error('Failed to fetch from Google Places API');
