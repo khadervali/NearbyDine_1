@@ -6,7 +6,7 @@ interface Restaurant {
   place_id: string;
   name: string;
   rating: string;
-  photos: { getUrl: () => string }[];
+  photos: { url: string }[];
   vicinity: string;
 }
 
@@ -31,7 +31,7 @@ export function RestaurantList({ restaurants, userId }: RestaurantListProps) {
           placeId={restaurant.place_id}
           name={restaurant.name}
           rating={restaurant.rating}
-          photo={restaurant.photos?.[0]?.getUrl()}
+          photo={restaurant.photos?.[0]?.url}
           address={restaurant.vicinity}
           isFavorite={favoriteIds.includes(restaurant.place_id)}
           userId={userId}

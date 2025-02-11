@@ -40,7 +40,19 @@ export function registerRoutes(app: Express): Server {
       }
 
       const data = await response.json();
-      res.json(data);
+
+      // Transform the results to include direct photo URLs
+      const transformedResults = data.results.map((place: any) => ({
+        ...place,
+        photos: place.photos?.map((photo: any) => ({
+          url: `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photo.photo_reference}&key=${apiKey}`
+        })) || []
+      }));
+
+      res.json({
+        ...data,
+        results: transformedResults
+      });
     } catch (error) {
       console.error('Error fetching restaurants:', error);
       res.status(500).json({ error: "Failed to fetch restaurants" });
