@@ -1,0 +1,91 @@
+Mobile App Requirements Document
+Project Name: Nearby Dine
+Version: 1.1
+ Date: [Insert Date]
+ Prepared by: [Your Name/Company]
+
+1. Introduction
+1.1 Purpose
+The purpose of this document is to define detailed functional and non-functional requirements for a hybrid mobile application called Nearby Dine. This app will help users find nearby restaurants, display their Google ratings, and potentially show restaurant menus. It will support Google authentication and run seamlessly on both iOS and Android platforms.
+1.2 Scope
+Hybrid mobile app development for iOS and Android.
+Google Authentication for user login.
+Location-based search for nearby restaurants.
+Integration with Google Places API to fetch restaurant data.
+Restaurant details view with ratings, images, and possibly menus.
+Filtering & Sorting capabilities.
+Favorites & History for logged-in users.
+1.3 Target Audience
+General consumers looking for nearby dining options.
+Tourists exploring new places to eat.
+Food enthusiasts searching for highly-rated restaurants.
+
+2. Functional Requirements
+2.1 User Authentication
+Users should be able to sign in using Google Authentication.
+Firebase Authentication will be used.
+Users who are not logged in can still browse restaurants but cannot save favorites.
+2.2 Location & Nearby Restaurants
+The app will request GPS location permission from users.
+Fetch and display nearby restaurants using the Google Places API.
+Display essential details for each restaurant:
+Name
+Address
+Google Rating (out of 5)
+Thumbnail Image (if available)
+Cuisine Type (if available)
+2.3 Restaurant Details & Menu
+When a user selects a restaurant, they should see:
+Full address
+Google rating & user reviews
+Contact information
+Opening hours
+Photos
+Menu (if available via API)
+Provide an option to open restaurant location in Google Maps for navigation.
+2.4 Search & Filters
+Users can search for restaurants by name or cuisine.
+Filter restaurants by:
+Rating (e.g., 4+ stars)
+Distance (e.g., within 1km, 5km, etc.)
+Cuisine Type
+Sort by:
+Highest rating first
+Nearest first
+2.5 Favorites & History (For Logged-in Users)
+Users can bookmark favorite restaurants.
+Users can view their previously viewed restaurants.
+
+3. Non-Functional Requirements
+3.1 Platform Compatibility
+The app will be developed using React Native or Flutter for cross-platform compatibility.
+3.2 Performance Optimization
+Optimized API calls with caching to avoid redundant requests.
+Efficient UI rendering to handle large restaurant lists smoothly.
+3.3 Security & Data Privacy
+OAuth 2.0 for secure authentication.
+Strict permissions for location access.
+No unnecessary storage of user data.
+3.4 Scalability
+The backend should handle a growing number of API requests efficiently.
+Firebase Firestore (or a database) may be used for storing user preferences.
+
+4. Technology Stack
+4.1 Frontend (Hybrid Mobile App)
+Framework: React Native / Flutter
+UI Library: Material UI / Tailwind CSS
+4.2 Backend
+Authentication: Firebase Auth (Google Sign-In)
+Database (if required): Firestore / PostgreSQL
+Server: Node.js with Express.js (for API proxy if needed)
+4.3 APIs & Third-Party Services
+Google Places API (for restaurant data)
+Google Maps API (for location & navigation)
+Firebase Authentication (for Google login)
+
+5. Additional Features (Future Enhancements)
+User reviews & rating system.
+Personalized restaurant recommendations.
+Table booking via third-party services.
+Dark mode UI option.
+
