@@ -7,6 +7,7 @@ import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "@/lib/firebase";
 import Home from "@/pages/home";
 import Restaurants from "@/pages/restaurants";
+import RestaurantDetails from "@/pages/restaurant-details";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -21,6 +22,9 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/restaurants">
             <Restaurants userId={userId} />
+          </Route>
+          <Route path="/restaurants/:placeId">
+            <RestaurantDetails />
           </Route>
           <Route component={NotFound} />
         </Switch>

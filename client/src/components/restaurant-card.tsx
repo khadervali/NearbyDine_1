@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { ReviewsSection } from "./reviews-section";
+import { Link } from "wouter";
 
 interface RestaurantCardProps {
   placeId: string;
@@ -29,7 +29,8 @@ export function RestaurantCard({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  async function toggleFavorite() {
+  async function toggleFavorite(e: React.MouseEvent) {
+    e.preventDefault(); // Prevent the card click from triggering
     if (!userId) {
       toast({
         title: "Sign in required",
@@ -65,32 +66,33 @@ export function RestaurantCard({
   }
 
   return (
-    <Card className="overflow-hidden">
-      <div className="aspect-video relative">
-        <img
-          src={photo || "https://via.placeholder.com/400x300?text=No+Image"}
-          alt={name}
-          className="w-full h-full object-cover"
-        />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-2 right-2 bg-white/80"
-          onClick={toggleFavorite}
-          disabled={isLoading}
-        >
-          <Heart className={`h-5 w-5 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
-        </Button>
-      </div>
-      <CardContent className="p-4">
-        <h3 className="font-semibold text-lg mb-2">{name}</h3>
-        <div className="flex items-center gap-2 mb-2">
-          <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-          <span>{rating}</span>
+    <Link href={`/restaurants/${placeId}`}>
+      <Card className="overflow-hidden cursor-pointer transition-transform hover:scale-[1.02]">
+        <div className="aspect-video relative">
+          <img
+            src={photo || "https://via.placeholder.com/400x300?text=No+Image"}
+            alt={name}
+            className="w-full h-full object-cover"
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-2 right-2 bg-white/80"
+            onClick={toggleFavorite}
+            disabled={isLoading}
+          >
+            <Heart className={`h-5 w-5 ${isFavorite ? "fill-red-500 text-red-500" : ""}`} />
+          </Button>
         </div>
-        <p className="text-sm text-gray-600 mb-4">{address}</p>
-        <ReviewsSection placeId={placeId} userId={userId} />
-      </CardContent>
-    </Card>
+        <CardContent className="p-4">
+          <h3 className="font-semibold text-lg mb-2">{name}</h3>
+          <div className="flex items-center gap-2 mb-2">
+            <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+            <span>{rating}</span>
+          </div>
+          <p className="text-sm text-gray-600">{address}</p>
+        </CardContent>
+      </Card>
+    </Link>
   );
 }

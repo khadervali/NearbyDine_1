@@ -59,6 +59,37 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Add this route before the reviews routes
+  app.get("/api/restaurants/:placeId", async (req, res) => {
+    try {
+      const placeId = req.params.placeId;
+      const apiKey = process.env.VITE_GOOGLE_MAPS_API_KEY;
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,rating,formatted_phone_number,opening_hours,photos,vicinity&key=${apiKey}`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch from Google Places API');
+      }
+
+      const data = await response.json();
+
+      // Transform the photos to include direct URLs
+      const transformedResult = {
+        ...data.result,
+        photos: data.result.photos?.map((photo: any) => ({
+          url: `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=${apiKey}`
+        })) || []
+      };
+
+      res.json(transformedResult);
+    } catch (error) {
+      console.error('Error fetching restaurant details:', error);
+      res.status(500).json({ error: "Failed to fetch restaurant details" });
+    }
+  });
+
+
   // Favorites routes
   app.get("/api/users/:userId/favorites", async (req, res) => {
     const userId = parseInt(req.params.userId);
