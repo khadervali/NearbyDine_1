@@ -1,10 +1,16 @@
+import 'dotenv/config';
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import cors from 'cors';
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cors({
+  origin: 'http://localhost:5173', // Vite's default port
+  credentials: true
+}));
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -36,6 +42,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Add this temporarily to debug
+console.log('DATABASE_URL:', process.env.DATABASE_URL);
+
 (async () => {
   const server = registerRoutes(app);
 
@@ -56,10 +65,24 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client
-  const PORT = 5000;
-  server.listen(PORT, "0.0.0.0", () => {
-    log(`serving on port ${PORT}`);
-  });
+  // Try different ports if 5000 is in use
+  const tryPort = (port: number): Promise<number> => {
+    return new Promise((resolve, reject) => {
+      server.listen(port)
+        .on('listening', () => {
+          console.log(`is listening on port ${port}`)
+          resolve(port);
+        })
+        .on('error', (err: any) => {
+          if (err.code === 'EADDRINUSE') {
+            tryPort(port + 1).then(resolve, reject);
+          } else {
+            reject(err);
+          }
+        });
+    });
+  };
+
+  const PORT = await tryPort(5000);
+  log(`serving on port ${PORT}`);
 })();
