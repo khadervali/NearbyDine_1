@@ -1,67 +1,72 @@
 import { useEffect, useState } from "react";
 import { useGeolocation } from "@/hooks/use-geolocation";
-import { RestaurantList } from "@/components/restaurant-list";
-import { SearchFilters } from "@/components/search-filters";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search, Star, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Search, Star, Heart } from "lucide-react";
 
-interface Restaurant {
+interface PopularPlace {
   place_id: string;
   name: string;
   rating: string;
   photos: { url: string }[];
   vicinity: string;
-}
-
-interface RestaurantsProps {
-  userId?: number;
+  user_ratings_total: number;
 }
 
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1552566626-52f8b828add9?q=80&w=2070";
 
-export default function Restaurants({ userId }: RestaurantsProps) {
+export default function PopularPlaces() {
   const { latitude, longitude, error, loading } = useGeolocation();
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [filteredRestaurants, setFilteredRestaurants] = useState<Restaurant[]>([]);
+  const [places, setPlaces] = useState<PopularPlace[]>([]);
   const [nextPageToken, setNextPageToken] = useState<string | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchRestaurants = async (pageToken?: string) => {
+  const fetchPopularPlaces = async (pageToken?: string) => {
     if (!latitude || !longitude) return;
 
     try {
-      const url = new URL('/api/restaurants', window.location.origin);
+      const url = new URL('/api/popular-places', window.location.origin);
       url.searchParams.append('latitude', latitude.toString());
       url.searchParams.append('longitude', longitude.toString());
       if (pageToken) {
         url.searchParams.append('pageToken', pageToken);
       }
 
-      const response = await fetch(url);
+      console.log('Requesting popular places from:', url.toString());
+
+      const response = await fetch(url, {
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch restaurants');
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('Received data:', data);
+
+      if (data.error) {
+        throw new Error(data.details || data.error);
+      }
 
       if (pageToken) {
-        setRestaurants(prev => [...prev, ...(data.results || [])]);
-        setFilteredRestaurants(prev => [...prev, ...(data.results || [])]);
+        setPlaces(prev => [...prev, ...(data.results || [])]);
       } else {
-        setRestaurants(data.results || []);
-        setFilteredRestaurants(data.results || []);
+        setPlaces(data.results || []);
       }
 
       setNextPageToken(data.next_page_token || null);
+
     } catch (error) {
+      console.error('Popular places error:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch restaurants. Please try again later.",
+        description: error instanceof Error ? error.message : "Failed to fetch popular places. Please try again later.",
         variant: "destructive",
       });
     } finally {
@@ -71,35 +76,14 @@ export default function Restaurants({ userId }: RestaurantsProps) {
   };
 
   useEffect(() => {
-    fetchRestaurants();
+    fetchPopularPlaces();
   }, [latitude, longitude]);
 
   const handleLoadMore = async () => {
     if (!nextPageToken || isLoadingMore) return;
     setIsLoadingMore(true);
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Google API requires a delay
-    await fetchRestaurants(nextPageToken);
-  };
-
-  const handleSearch = (query: string) => {
-    const filtered = restaurants.filter((restaurant) =>
-      restaurant.name.toLowerCase().includes(query.toLowerCase())
-    );
-    setFilteredRestaurants(filtered);
-  };
-
-  const handleRatingFilter = (rating: string) => {
-    const filtered = restaurants.filter(
-      (restaurant) => Number(restaurant.rating) >= parseFloat(rating)
-    );
-    setFilteredRestaurants(filtered);
-  };
-
-  const handleDistanceFilter = (distance: string) => {
-    // In a real app, you would calculate actual distances
-    // For now, we'll just filter based on a random subset
-    const filtered = restaurants.slice(0, parseInt(distance) / 100);
-    setFilteredRestaurants(filtered);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    await fetchPopularPlaces(nextPageToken);
   };
 
   if (error) {
@@ -122,7 +106,7 @@ export default function Restaurants({ userId }: RestaurantsProps) {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-foreground mb-8">
-          Nearby Restaurants
+          Popular Places Near You
         </h1>
 
         {/* Search bar */}
@@ -130,27 +114,26 @@ export default function Restaurants({ userId }: RestaurantsProps) {
           <Search className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search restaurants..."
+            placeholder="Search popular places..."
             className="w-full h-12 pl-12 pr-4 rounded-lg
               bg-card/50 border border-border/10
               text-foreground placeholder:text-muted-foreground
               focus:outline-none focus:ring-2 focus:ring-ring/20"
-            onChange={(e) => handleSearch(e.target.value)}
           />
         </div>
 
-        {/* Restaurant grid */}
+        {/* Places grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {restaurants.map((restaurant) => (
+          {places.map((place) => (
             <div
-              key={restaurant.place_id}
+              key={place.place_id}
               className="group rounded-3xl overflow-hidden glass-card"
             >
               <div className="relative h-48">
-                {restaurant.photos?.[0]?.url ? (
+                {place.photos?.[0]?.url ? (
                   <img
-                    src={restaurant.photos[0].url}
-                    alt={restaurant.name}
+                    src={place.photos[0].url}
+                    alt={place.name}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.currentTarget.src = FALLBACK_IMAGE;
@@ -160,12 +143,11 @@ export default function Restaurants({ userId }: RestaurantsProps) {
                   <div className="w-full h-full flex items-center justify-center bg-card/70">
                     <img
                       src={FALLBACK_IMAGE}
-                      alt="Restaurant placeholder"
+                      alt="Place placeholder"
                       className="w-full h-full object-cover opacity-50"
                     />
                   </div>
                 )}
-                {/* Favorite button */}
                 <button className="absolute top-4 right-4 p-2 rounded-full
                   bg-black/20 backdrop-blur-sm border border-white/10
                   hover:bg-black/30 transition-colors">
@@ -176,18 +158,18 @@ export default function Restaurants({ userId }: RestaurantsProps) {
               <div className="p-6">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-semibold text-foreground">
-                    {restaurant.name}
+                    {place.name}
                   </h3>
                   <div className="flex items-center gap-1 px-2 py-1 rounded-full
                     bg-primary/10 border border-primary/20">
                     <Star className="h-4 w-4 text-primary fill-primary" />
                     <span className="text-sm font-medium text-primary">
-                      {restaurant.rating}
+                      {place.rating} ({place.user_ratings_total})
                     </span>
                   </div>
                 </div>
                 <p className="text-muted-foreground text-sm">
-                  {restaurant.vicinity}
+                  {place.vicinity}
                 </p>
               </div>
             </div>
@@ -200,8 +182,8 @@ export default function Restaurants({ userId }: RestaurantsProps) {
               onClick={handleLoadMore}
               disabled={isLoadingMore}
               variant="outline"
-              className="bg-[#2a357d]/50 border-white/10 text-white
-                hover:bg-[#2a357d]/70 hover:border-white/20"
+              className="bg-card/50 border-white/10 text-white
+                hover:bg-card/70 hover:border-white/20"
               size="lg"
             >
               {isLoadingMore ? (
@@ -210,7 +192,7 @@ export default function Restaurants({ userId }: RestaurantsProps) {
                   Loading...
                 </>
               ) : (
-                'Load More Restaurants'
+                'Load More Places'
               )}
             </Button>
           </div>
@@ -218,4 +200,4 @@ export default function Restaurants({ userId }: RestaurantsProps) {
       </div>
     </div>
   );
-}
+} 
